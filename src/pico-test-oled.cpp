@@ -84,32 +84,31 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
 
 
     try {
-        auto spi = berry.addSPI<PicoSPI>("pico-spi-0");
-        spi->baudRate(20'000'000); // 20MHz
+        PicoSPI spi; // Default pins
+        spi.baudRate(20'000'000); // 20MHz
 
-        spi->open();
+        spi.open();
         spi_set_format(spi0, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 
-        auto oled = std::make_shared<devices::SSD1305<>>();
-        spi->device(oled);
-        //spi->verbose(true);
-        printf("SPI channel 0 using TX=%d, CLK=%d, CS=%d\n", spi->mosiPin(), spi->sclkPin(), spi->csPin());
+        devices::SSD1305<interfaces::PicoSPI> oled(spi);
+        //spi.verbose(true);
+        printf("SPI channel 0 using TX=%d, CLK=%d, CS=%d\n", spi.mosiPin(), spi.sclkPin(), spi.csPin());
 
-        printf("Resetting display. Display is using DC=%d and RST=%d\n", oled->dcPin(), oled->rstPin());
-        oled->reset();
-        oled->sendImmediately(false);
+        printf("Resetting display. Display is using DC=%d and RST=%d\n", oled.dcPin(), oled.rstPin());
+        oled.reset();
+        oled.sendImmediately(false);
 
         berry.sleepMs(500);
 
         printf("Sending first screen.\n");
-        oled->clear();
-        for (unsigned x = 0; x < oled->width(); x++) {
-            oled->set(x, 0); oled->set(x, oled->height()-1);
+        oled.clear();
+        for (unsigned x = 0; x < oled.width(); x++) {
+            oled.set(x, 0); oled.set(x, oled.height()-1);
         }
-        for (unsigned y = 0; y < oled->height(); y++) {
-            oled->set(0, y); oled->set(oled->width()-1, y);
+        for (unsigned y = 0; y < oled.height(); y++) {
+            oled.set(0, y); oled.set(oled.width()-1, y);
         }
-        oled->sendBuffer();
+        oled.sendBuffer();
 
         unsigned numBlips = 0;
         unsigned x{1};
@@ -128,13 +127,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char*argv[])
                     printf("%ld FPS\n", long(frame / (usSinceStart / 1000000)));
                 }
             }
-            oled->reset(x, y);
+            oled.reset(x, y);
             x += dx;
-            if (x >= oled->width()) { dx = -dx; x += dx+dx; }
+            if (x >= oled.width()) { dx = -dx; x += dx+dx; }
             y += dy;
-            if (y >= oled->height()) { dy = -dy; y += dy+dy; }
-            oled->set(x, y);
-            oled->sendBuffer();
+            if (y >= oled.height()) { dy = -dy; y += dy+dy; }
+            oled.set(x, y);
+            oled.sendBuffer();
             frame++;
 
             berry.sleepMs(100);
